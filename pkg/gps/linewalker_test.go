@@ -34,16 +34,20 @@ func TestWalkers(t *testing.T) {
 		dist        Distance
 		endLatLng   s2.LatLng
 		crossedEdge bool
+		shouldReset bool
 	}{
 		RestartWalker(mezzalunaPath): {
-			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(45, -90), false},
-			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(90, 0), false},
-			{DistanceFromMeters(earthRadius * math.Pi), s2.LatLngFromDegrees(90, 0), true},
+			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(45, -90), false, false},
+			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(90, 0), false, false},
+			{DistanceFromMeters(earthRadius * math.Pi), s2.LatLngFromDegrees(90, 0), true, false},
+			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(90, 0), false, true},
 		},
 		BackForthWalker(mezzalunaPath): {
-			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(90, 0), false},
-			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(45, 90), false},
-			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(45, 90), true},
+			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(90, 0), false, false},
+			{DistanceFromMeters(earthRadius * (math.Pi / 4)), s2.LatLngFromDegrees(45, 90), false, false},
+			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(45, 90), true, false},
+			{DistanceFromMeters(earthRadius * math.Pi), s2.LatLngFromDegrees(45, -90), true, false},
+			{DistanceFromMeters(earthRadius * (math.Pi / 2)), s2.LatLngFromDegrees(90, 0), false, true},
 		},
 	}
 
@@ -52,6 +56,9 @@ func TestWalkers(t *testing.T) {
 			t.Run(
 				fmt.Sprintf("%s/Distance-%.6f/Stop-%v", reflect.TypeOf(lw), walk.dist, walk.endLatLng),
 				func(t *testing.T) {
+					if walk.shouldReset {
+						lw.Reset()
+					}
 					ll, ce := lw.Walk(walk.dist)
 					assert.True(t, walk.endLatLng.ApproxEqual(ll), "Expected: %v/Result: %v", walk.endLatLng, ll)
 					assert.Equal(t, walk.crossedEdge, ce)
