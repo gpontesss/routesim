@@ -10,79 +10,97 @@ type LineWalker interface {
 	// Resets current position to the start of the line
 	Reset()
 	// Walks a distance across a line and returns the point it stopped, and
-	// tells if it has crossed one of the line edges
-	Walk(dist float64) (s2.Point, bool)
+	// tells if it has crossed one of the line edges. The distance is given in
+	// meters.
+	Walk(dist Distance) (s2.LatLng, bool)
+}
+
+// Distance docs here
+type Distance s1.Angle
+
+// In meters
+const earthRadius = 6_371_000.0
+
+// DistanceFromMeters docs here
+func DistanceFromMeters(m float64) Distance {
+	return Distance(m / earthRadius)
 }
 
 type backForthWalker struct {
 	path    *s2.Polyline
 	currPos float64
-	len     s1.Angle
+	len     Distance
 }
 
+// BackForthWalker creates a LineWalker that traverses a line forward and, when
+// it reaches the end, goes back in reverse. The path should have lat lng
+// coordinates.
 func BackForthWalker(path *s2.Polyline) LineWalker {
-	return &BackForthLineWalker{
+	return &backForthWalker{
 		path:    path,
 		currPos: 0,
-		len:     path.Length(),
+		len:     Distance(path.Length()),
 	}
 }
 
+// Reset resets the LineWalker position to the start of the line
 func (w *backForthWalker) Reset() {
 	w.currPos = 0
 }
 
-func (w *backForthWalker) Walk(dist float64) (s2.Point, bool) {
-	var pt s2.Point
-
-	distFrac := float64(metersToS1Angle(dist) / w.len)
+// Walk walks a distance along the line. The distance should be given in meters.
+func (w *backForthWalker) Walk(dist Distance) (s2.LatLng, bool) {
+	distFrac := float64(dist / w.len)
 	crossedEdge := w.currPos < 1 && 1 <= w.currPos+distFrac
 
 	if w.currPos += distFrac; 2 <= w.currPos {
-		w.currPos -= 2
+		w.currPos -= 2.0
 		crossedEdge = true
 	}
 
+	var pt s2.Point
 	if w.currPos >= 1 {
 		pt, _ = w.path.Interpolate(2 - w.currPos)
 	} else {
 		pt, _ = w.path.Interpolate(w.currPos)
 	}
 
-	return pt, crossedEdge
+	return s2.LatLngFromPoint(pt), crossedEdge
 }
 
 type restartWalker struct {
 	path    *s2.Polyline
 	currPos float64
-	len     s1.Angle
+	len     Distance
 }
 
+// RestartWalker creates a LineWalker that traverses a line forward and, when
+// it reaches the end, goes back to the start. The path should have lat lng
+// coordinates.
 func RestartWalker(path *s2.Polyline) LineWalker {
 	return &restartWalker{
 		path:    path,
 		currPos: 0,
-		len:     path.Length(),
+		len:     Distance(path.Length()),
 	}
 }
 
+// Reset resets the LineWalker position to the start of the line
 func (w *restartWalker) Reset() {
 	w.currPos = 0
 }
 
-func (w *restartWalker) Walk(dist float64) (s2.Point, bool) {
+// Walk walks a distance along the line. The distance should be given in meters.
+func (w *restartWalker) Walk(dist Distance) (s2.LatLng, bool) {
 	crossedEdge := false
-	frac := float64(metersToS1Angle(dist) / w.len)
+	distFrac := float64(dist / w.len)
 
-	if w.currPos+frac > 1 {
+	w.currPos += distFrac
+	if w.currPos > 1 {
 		crossedEdge = true
-		w.currPos -= 1
+		w.currPos -= 1.0
 	}
 
-	pt, _ := w.path.Interpolate(frac)
-	return pt, crossedEdge
-}
-
-func metersToS1Angle(m float64) s1.Angle {
-	panic("Not implemented")
+	pt, _ := w.path.Interpolate(w.currPos)
+	return s2.LatLngFromPoint(pt), crossedEdge
 }

@@ -1,0 +1,19 @@
+{
+    "gps": [
+        {
+            "shapefile": "samples/paths/pinheiros.shp",
+            "mode": "restart",
+            "frequency": "1s",
+            "velocity": 10,
+            "properties": {
+                "sign": "TEST01234"
+            }
+        }
+    ],
+    "publisher": {
+        "type": "log",
+        "options": {
+            "level": "debug"
+        }
+    }
+}

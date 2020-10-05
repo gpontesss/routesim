@@ -23,7 +23,7 @@ func GPSPosEmitter(gps gps.GPS, freq time.Duration, props map[string]interface{}
 	emitter := &PosEmitter{
 		id:         gps.ID(),
 		curPosFunc: gps.CurrentPos,
-		fre:        freq,
+		freq:       freq,
 		// Should it be buffered?
 		posChan: make(chan geojson.Feature),
 	}
@@ -35,10 +35,10 @@ func GPSPosEmitter(gps gps.GPS, freq time.Duration, props map[string]interface{}
 func (e *PosEmitter) init() {
 	ticker := time.NewTicker(e.freq)
 	go func() {
-		for _ := range ticker.C {
-			pos := e.posFunc()
+		for range ticker.C {
+			pos := e.curPosFunc()
 			e.posChan <- geojson.Feature{
-				id:         e.id,
+				ID:         e.id,
 				Type:       "Feature",
 				Properties: e.addPros,
 				Geometry: &geojson.Geometry{
