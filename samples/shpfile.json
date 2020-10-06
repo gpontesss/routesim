@@ -3,8 +3,8 @@
         {
             "shapefile": "samples/paths/pinheiros.shp",
             "mode": "restart",
-            "frequency": "1s",
-            "velocity": 10,
+            "frequency": "0.1s",
+            "velocity": 50,
             "properties": {
                 "sign": "TEST01234"
             }
@@ -13,7 +13,7 @@
     "publisher": {
         "type": "shpfile",
         "options": {
-            "path": "shpfiles/path.shp",
+            "path": "samples/out/path.shp",
             "count": 250
         }
     }

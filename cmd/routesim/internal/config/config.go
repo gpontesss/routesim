@@ -9,36 +9,38 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
-	"github.com/gpontesss/routesim/pkg/emitter"
 	"github.com/gpontesss/routesim/pkg/gps"
 	"github.com/gpontesss/routesim/pkg/pospub"
 	"github.com/jonas-p/go-shp"
 	"github.com/sirupsen/logrus"
 )
 
+// Config docs here
 type Config struct {
-	GPSCfgArray     []GPSCofig      `json:"gps"`
+	GPSCfgArray     []GPSConfig     `json:"gps"`
 	PublisherConfig PublisherConfig `json:"publisher"`
 }
 
+// BuildRouteSim docs here
 func (cfg Config) BuildRouteSim() (*routesim.RouteSim, error) {
-	ems := make([]*emitter.PosEmitter, 0, len(cfg.GPSCfgArray))
+	emts := make([]*gps.FreqEmitter, 0, len(cfg.GPSCfgArray))
 	for _, gpsCfg := range cfg.GPSCfgArray {
-		em, err := gpsCfg.BuildPosEmitter()
+		emt, err := gpsCfg.BuildFreqEmitter()
 		if err != nil {
 			return nil, fmt.Errorf("Error building PosEmitter: %w", err)
 		}
-		ems = append(ems, em)
+		emts = append(emts, emt)
 	}
 
 	pub, err := cfg.PublisherConfig.BuildPublisher()
 	if err != nil {
 		return nil, fmt.Errorf("Error building Publisher: %w", err)
 	}
-	return routesim.NewRouteSim(ems, pub), nil
+	return routesim.NewRouteSim(emts, pub), nil
 }
 
-type GPSCofig struct {
+// GPSConfig docs here
+type GPSConfig struct {
 	// Relative path for shapefile describing GPS's route
 	ShapefilePath string `json:"shapefile"`
 	// Route mode that describes the behavior of the route when it reaches the
@@ -52,19 +54,21 @@ type GPSCofig struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
-func (cfg GPSCofig) BuildPosEmitter() (*emitter.PosEmitter, error) {
-	gps, err := cfg.BuildGPS()
+// BuildFreqEmitter docs here
+func (cfg GPSConfig) BuildFreqEmitter() (*gps.FreqEmitter, error) {
+	sgps, err := cfg.BuildGPS()
 	if err != nil {
 		return nil, fmt.Errorf("Error building GPS: %w", err)
 	}
-	return emitter.GPSPosEmitter(
-		gps,
+	return gps.NewFreqEmitter(
+		sgps,
 		time.Duration(cfg.Frequency),
 		cfg.Properties,
 	), nil
 }
 
-func (cfg GPSCofig) BuildGPS() (gps.GPS, error) {
+// BuildGPS docs here
+func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 	shprdr, err := shp.Open(cfg.ShapefilePath)
 	if err != nil {
 		return nil, err
@@ -105,6 +109,7 @@ func s2PolylineFromShpReader(rdr *shp.Reader) (*s2.Polyline, error) {
 	return s2.PolylineFromLatLngs(coords), nil
 }
 
+// BuildLineWalker docs here
 func BuildLineWalker(mode ModeGPS, path *s2.Polyline) (gps.LineWalker, error) {
 	switch mode {
 	case BackAndForthMode:
@@ -116,13 +121,17 @@ func BuildLineWalker(mode ModeGPS, path *s2.Polyline) (gps.LineWalker, error) {
 	}
 }
 
+// ModeGPS docs here
 type ModeGPS string
 
 const (
+	// BackAndForthMode  docs here
 	BackAndForthMode ModeGPS = "BackAndForth"
-	RestartMode              = "Restart"
+	// RestartMode docs here
+	RestartMode = "Restart"
 )
 
+// UnmarshalJSON docs here
 func (m *ModeGPS) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
@@ -141,6 +150,7 @@ func (m *ModeGPS) UnmarshalJSON(v []byte) error {
 	return nil
 }
 
+// PublisherConfig docs here
 type PublisherConfig struct {
 	// Publisher type name
 	Type PublisherType `json:"type"`
@@ -148,6 +158,7 @@ type PublisherConfig struct {
 	Options json.RawMessage `json:"options"`
 }
 
+// BuildPublisher docs here
 func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 	switch cfg.Type {
 	case KinesisPublisher:
@@ -174,13 +185,18 @@ func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 }
 
 const (
-	LogPublisher     PublisherType = "Log"
-	KinesisPublisher               = "Kinesis"
-	ShpfilePublisher               = "Shpfile"
+	// LogPublisher docs here
+	LogPublisher PublisherType = "Log"
+	// KinesisPublisher docs here
+	KinesisPublisher = "Kinesis"
+	// ShpfilePublisher docs here
+	ShpfilePublisher = "Shpfile"
 )
 
+// PublisherType docs here
 type PublisherType string
 
+// UnmarshalJSON docs here
 func (t *PublisherType) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
@@ -213,8 +229,10 @@ type shpPubCfg struct {
 	FilePath string `json:"path"`
 }
 
+// Frequency docs here
 type Frequency time.Duration
 
+// UnmarshalJSON docs here
 func (f *Frequency) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {

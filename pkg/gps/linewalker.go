@@ -1,6 +1,8 @@
 package gps
 
 import (
+	"math"
+
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
 )
@@ -54,7 +56,7 @@ func (w *backForthWalker) Walk(dist Distance) (s2.LatLng, bool) {
 	crossedEdge := w.currPos < 1 && 1 <= w.currPos+distFrac
 
 	if w.currPos += distFrac; 2 <= w.currPos {
-		w.currPos -= 2.0
+		w.currPos = math.Mod(w.currPos, 2.0)
 		crossedEdge = true
 	}
 
@@ -98,7 +100,7 @@ func (w *restartWalker) Walk(dist Distance) (s2.LatLng, bool) {
 	w.currPos += distFrac
 	if w.currPos > 1 {
 		crossedEdge = true
-		w.currPos -= 1.0
+		w.currPos = math.Mod(w.currPos, 1.0)
 	}
 
 	pt, _ := w.path.Interpolate(w.currPos)

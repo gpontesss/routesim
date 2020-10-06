@@ -1,16 +1,15 @@
-package emitter
+package gps
 
 import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/gpontesss/routesim/pkg/gps"
 	geojson "github.com/paulmach/go.geojson"
 )
 
-// Emitter makes a channel available that receives latlng positions formatted
+// FreqEmitter makes a channel available that receives latlng positions formatted
 // as GeoJSON points with any additional properties desired
-type PosEmitter struct {
+type FreqEmitter struct {
 	id         string
 	curPosFunc func() s2.LatLng
 	freq       time.Duration
@@ -18,9 +17,9 @@ type PosEmitter struct {
 	posChan    chan geojson.Feature
 }
 
-// GPSEmitter assembles a GPS position emitter
-func GPSPosEmitter(gps gps.GPS, freq time.Duration, props map[string]interface{}) *PosEmitter {
-	emitter := &PosEmitter{
+// NewFreqEmitter assembles a GPS position emitter
+func NewFreqEmitter(gps GPS, freq time.Duration, props map[string]interface{}) *FreqEmitter {
+	emitter := &FreqEmitter{
 		id:         gps.ID(),
 		curPosFunc: gps.CurrentPos,
 		freq:       freq,
@@ -32,7 +31,7 @@ func GPSPosEmitter(gps gps.GPS, freq time.Duration, props map[string]interface{}
 }
 
 // Initializes a goroutine for querying GPS's position with desired frequency
-func (e *PosEmitter) init() {
+func (e *FreqEmitter) init() {
 	ticker := time.NewTicker(e.freq)
 	go func() {
 		for range ticker.C {
@@ -54,6 +53,6 @@ func (e *PosEmitter) init() {
 }
 
 // Positions returns a channel that receives positions with desired frequency
-func (e *PosEmitter) Positions() <-chan geojson.Feature {
+func (e *FreqEmitter) Positions() <-chan geojson.Feature {
 	return e.posChan
 }
