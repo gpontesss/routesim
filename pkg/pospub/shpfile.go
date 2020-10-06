@@ -13,6 +13,7 @@ type shpfilePosPub struct {
 	stopi int32
 }
 
+// ShpfilePosPublisher docs here
 func ShpfilePosPublisher(filePath string, count int32) (PosPublisher, error) {
 	wtr, err := shp.Create(filePath, shp.POINT)
 	if err != nil {
@@ -26,6 +27,7 @@ func ShpfilePosPublisher(filePath string, count int32) (PosPublisher, error) {
 	}, nil
 }
 
+// PublishPos docs here
 func (p *shpfilePosPub) PublishPos(pos geojson.Feature) error {
 	pt := pos.Geometry.Point
 	coord := &shp.Point{

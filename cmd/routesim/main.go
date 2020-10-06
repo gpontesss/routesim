@@ -7,7 +7,7 @@ import (
 	"github.com/gpontesss/routesim/cmd/routesim/internal/config"
 )
 
-const filePath = "samples/shpfile.json"
+const filePath = "samples/websocket/websocket.json"
 
 func main() {
 	file, err := os.Open(filePath)

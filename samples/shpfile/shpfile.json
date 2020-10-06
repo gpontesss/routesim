@@ -13,7 +13,7 @@
     "publisher": {
         "type": "shpfile",
         "options": {
-            "path": "samples/out/path.shp",
+            "path": "samples/shpfile/out/path.shp",
             "count": 250
         }
     }

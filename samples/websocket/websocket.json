@@ -1,0 +1,29 @@
+{
+    "gps": [
+        {
+            "shapefile": "samples/paths/pinheiros.shp",
+            "mode": "restart",
+            "frequency": "1s",
+            "velocity": 50,
+            "properties": {
+                "sign": "TEST01234"
+            }
+        },
+        {
+            "shapefile": "samples/paths/pinheiros.shp",
+            "mode": "restart",
+            "frequency": "1s",
+            "velocity": 10,
+            "properties": {
+                "sign": "TEST01234"
+            }
+        }
+    ],
+    "publisher": {
+        "type": "websocket",
+        "options": {
+            "address": "0.0.0.0:8282",
+            "path": "/gps"
+        }
+    }
+}

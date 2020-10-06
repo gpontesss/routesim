@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RouteSim</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map {
+            height: 100vh;
+        }
+
+        .gps-marker {
+            transition: transform 0.5s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        var map = L.map("map").setView([-23.54757, -46.63480], 13);
+        L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        }).addTo(map)
+
+        var ws = new WebSocket("ws://127.0.0.1:8282/gps");
+        var gpsMap = new Map();
+
+        L.Icon.Default.prototype.options.className = "gps-marker";
+
+        ws.onmessage = function (evt) {
+            var geoJSON = JSON.parse(evt.data);
+            var latLng = L.GeoJSON.coordsToLatLng(geoJSON.geometry.coordinates);
+
+            var marker = gpsMap.get(geoJSON.id);
+            if (marker == undefined) {
+                marker = L.marker(latLng);
+                gpsMap.set(geoJSON.id, marker);
+                marker.addTo(map);
+            } else {
+                marker.setLatLng(latLng);
+            }
+        }
+
+        ws.onerror = function (evt) {
+            window.alert("Error connecting to " + evt.target.url);
+        }
+    </script>
+</body>
+
+</html>

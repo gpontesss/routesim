@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	"github.com/google/uuid"
 	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
 	"github.com/gpontesss/routesim/pkg/gps"
 	"github.com/gpontesss/routesim/pkg/pospub"
@@ -84,8 +85,7 @@ func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 		return nil, fmt.Errorf("Error building line walker: %w", err)
 	}
 
-	// TODO: define ID generation
-	return gps.NewSimGPS("", cfg.Velocity, lw), nil
+	return gps.NewSimGPS(uuid.New().String(), cfg.Velocity, lw), nil
 }
 
 func s2PolylineFromShpReader(rdr *shp.Reader) (*s2.Polyline, error) {
@@ -179,6 +179,12 @@ func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 			return nil, err
 		}
 		return pospub.ShpfilePosPublisher(shpcfg.FilePath, shpcfg.Count)
+	case WebsocketPublisher:
+		var wscfg wsCfg
+		if err := json.Unmarshal(cfg.Options, &wscfg); err != nil {
+			return nil, err
+		}
+		return pospub.WebsocketPosPublisher(wscfg.Address, wscfg.Path), nil
 	default:
 		return nil, errors.New("Unkonwn publisher type")
 	}
@@ -191,6 +197,8 @@ const (
 	KinesisPublisher = "Kinesis"
 	// ShpfilePublisher docs here
 	ShpfilePublisher = "Shpfile"
+	// WebsocketPublisher docs here
+	WebsocketPublisher = "Websocket"
 )
 
 // PublisherType docs here
@@ -210,6 +218,8 @@ func (t *PublisherType) UnmarshalJSON(v []byte) error {
 		*t = LogPublisher
 	case "shpfile":
 		*t = ShpfilePublisher
+	case "websocket":
+		*t = WebsocketPublisher
 	default:
 		return fmt.Errorf("Unknown publisher type '%s'", s)
 	}
@@ -227,6 +237,11 @@ type logPubCfg struct {
 type shpPubCfg struct {
 	Count    int32  `json:"count"`
 	FilePath string `json:"path"`
+}
+
+type wsCfg struct {
+	Address string `json:"address"`
+	Path    string `json:"path"`
 }
 
 // Frequency docs here
