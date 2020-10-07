@@ -4,19 +4,13 @@
             "shapefile": "samples/paths/pinheiros.shp",
             "mode": "restart",
             "frequency": "1s",
-            "velocity": 50,
-            "properties": {
-                "sign": "TEST01234"
-            }
+            "velocity": 50
         },
         {
             "shapefile": "samples/paths/pinheiros.shp",
-            "mode": "restart",
+            "mode": "backandforth",
             "frequency": "1s",
-            "velocity": 10,
-            "properties": {
-                "sign": "TEST01234"
-            }
+            "velocity": 70
         }
     ],
     "publisher": {

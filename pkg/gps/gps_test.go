@@ -42,8 +42,8 @@ func TestSimGPS(t *testing.T) {
 	gps := NewSimGPS("123", 10, flw)
 
 	assert.Equal(t, "123", gps.ID())
-	assert.Equal(t, s2.LatLngFromDegrees(45, 45), gps.CurrentPos())
-	assert.Equal(t, s2.LatLngFromDegrees(90, 0), gps.CurrentPos())
+	assert.Equal(t, s2.LatLngFromDegrees(45, 45), gps.CurrentPos().LatLng)
+	assert.Equal(t, s2.LatLngFromDegrees(90, 0), gps.CurrentPos().LatLng)
 
 	flw.AssertNumberOfCalls(t, "Walk", 2)
 	flw.AssertExpectations(t)

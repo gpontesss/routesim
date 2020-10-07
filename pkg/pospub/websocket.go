@@ -2,11 +2,11 @@ package pospub
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 
+	"github.com/gpontesss/routesim/pkg/gps"
 	geojson "github.com/paulmach/go.geojson"
 	"golang.org/x/net/websocket"
 )
@@ -15,7 +15,7 @@ type wsPosPub struct {
 	sync.Mutex
 	address, path string
 	errChan       chan error
-	listeners     map[*websocket.Conn]chan<- geojson.Feature
+	listeners     map[*websocket.Conn]chan<- gps.Position
 }
 
 // WebsocketPosPublisher docs here
@@ -24,7 +24,7 @@ func WebsocketPosPublisher(address, path string) PosPublisher {
 		address:   address,
 		path:      path,
 		errChan:   make(chan error),
-		listeners: map[*websocket.Conn]chan<- geojson.Feature{},
+		listeners: map[*websocket.Conn]chan<- gps.Position{},
 	}
 	pub.init()
 	return pub
@@ -41,16 +41,6 @@ func (p *wsPosPub) init() {
 	}()
 }
 
-var codec = websocket.Codec{
-	Unmarshal: func(data []byte, payloadType byte, v interface{}) (err error) {
-		fmt.Println(data, payloadType, v)
-		if payloadType == websocket.CloseFrame {
-			return errors.New("Connection closed by client")
-		}
-		return nil
-	},
-}
-
 func (p *wsPosPub) handleConn(conn *websocket.Conn) {
 	rcv := p.createListener(conn)
 	fmt.Println("Received conn")
@@ -60,7 +50,7 @@ func (p *wsPosPub) handleConn(conn *websocket.Conn) {
 
 	go func() {
 		var s string
-		if err := codec.Receive(conn, &s); err != nil {
+		if err := websocket.Message.Receive(conn, &s); err != nil {
 			fmt.Printf("Client disconnected: %+v\n", err)
 			p.unregisterListener(conn)
 			cancel()
@@ -74,7 +64,20 @@ func (p *wsPosPub) handleConn(conn *websocket.Conn) {
 		case <-ctx.Done():
 			return
 		default:
-			if err := websocket.JSON.Send(conn, <-rcv); err != nil {
+			pos := <-rcv
+			// Should be temporary
+			geoJSON := geojson.Feature{
+				ID: pos.GPS.ID(),
+				Geometry: &geojson.Geometry{
+					Type: geojson.GeometryPoint,
+					Point: []float64{
+						pos.Lat.Degrees(),
+						pos.Lng.Degrees(),
+					},
+				},
+			}
+
+			if err := websocket.JSON.Send(conn, geoJSON); err != nil {
 				p.unregisterListener(conn)
 				p.errChan <- err
 				return
@@ -90,8 +93,8 @@ func (p *wsPosPub) unregisterListener(conn *websocket.Conn) {
 	delete(p.listeners, conn)
 }
 
-func (p *wsPosPub) createListener(conn *websocket.Conn) <-chan geojson.Feature {
-	lst := make(chan geojson.Feature)
+func (p *wsPosPub) createListener(conn *websocket.Conn) <-chan gps.Position {
+	lst := make(chan gps.Position)
 
 	p.Lock()
 	defer p.Unlock()
@@ -99,8 +102,8 @@ func (p *wsPosPub) createListener(conn *websocket.Conn) <-chan geojson.Feature {
 	return lst
 }
 
-func (p *wsPosPub) PublishPos(pos geojson.Feature) error {
-	fmt.Println(pos.ID, "Received pos", pos.Geometry.Point, "channels", len(p.listeners))
+func (p *wsPosPub) PublishPos(pos gps.Position) error {
+	fmt.Println(pos.GPS.ID(), "Received pos", pos.LatLng, "channels", len(p.listeners))
 
 	select {
 	case err := <-p.errChan:

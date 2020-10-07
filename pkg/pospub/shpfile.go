@@ -3,8 +3,8 @@ package pospub
 import (
 	"errors"
 
+	"github.com/gpontesss/routesim/pkg/gps"
 	"github.com/jonas-p/go-shp"
-	geojson "github.com/paulmach/go.geojson"
 )
 
 type shpfilePosPub struct {
@@ -28,11 +28,10 @@ func ShpfilePosPublisher(filePath string, count int32) (PosPublisher, error) {
 }
 
 // PublishPos docs here
-func (p *shpfilePosPub) PublishPos(pos geojson.Feature) error {
-	pt := pos.Geometry.Point
+func (p *shpfilePosPub) PublishPos(pos gps.Position) error {
 	coord := &shp.Point{
-		X: pt[0],
-		Y: pt[1],
+		X: pos.Lat.Degrees(),
+		Y: pos.Lng.Degrees(),
 	}
 	p.curri = p.wtr.Write(coord)
 

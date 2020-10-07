@@ -2,57 +2,38 @@ package gps
 
 import (
 	"time"
-
-	"github.com/golang/geo/s2"
-	geojson "github.com/paulmach/go.geojson"
 )
 
-// FreqEmitter makes a channel available that receives latlng positions formatted
-// as GeoJSON points with any additional properties desired
+// FreqEmitter makes a channel available that receives latlng positions
 type FreqEmitter struct {
-	id         string
-	curPosFunc func() s2.LatLng
+	curPosFunc func() Position
 	freq       time.Duration
-	addPros    map[string]interface{}
-	posChan    chan geojson.Feature
+	posChan    chan Position
 }
 
 // NewFreqEmitter assembles a GPS position emitter
-func NewFreqEmitter(gps GPS, freq time.Duration, props map[string]interface{}) *FreqEmitter {
-	emitter := &FreqEmitter{
-		id:         gps.ID(),
+func NewFreqEmitter(gps GPS, freq time.Duration) *FreqEmitter {
+	emt := &FreqEmitter{
 		curPosFunc: gps.CurrentPos,
 		freq:       freq,
 		// Should it be buffered?
-		posChan: make(chan geojson.Feature),
+		posChan: make(chan Position),
 	}
-	emitter.init()
-	return emitter
+	emt.init()
+	return emt
 }
 
 // Initializes a goroutine for querying GPS's position with desired frequency
-func (e *FreqEmitter) init() {
-	ticker := time.NewTicker(e.freq)
+func (emt *FreqEmitter) init() {
+	ticker := time.NewTicker(emt.freq)
 	go func() {
 		for range ticker.C {
-			pos := e.curPosFunc()
-			e.posChan <- geojson.Feature{
-				ID:         e.id,
-				Type:       "Feature",
-				Properties: e.addPros,
-				Geometry: &geojson.Geometry{
-					Type: geojson.GeometryPoint,
-					Point: []float64{
-						pos.Lat.Degrees(),
-						pos.Lng.Degrees(),
-					},
-				},
-			}
+			emt.posChan <- emt.curPosFunc()
 		}
 	}()
 }
 
 // Positions returns a channel that receives positions with desired frequency
-func (e *FreqEmitter) Positions() <-chan geojson.Feature {
-	return e.posChan
+func (emt *FreqEmitter) Positions() <-chan Position {
+	return emt.posChan
 }

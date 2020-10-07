@@ -1,9 +1,10 @@
 package pospub
 
-import geojson "github.com/paulmach/go.geojson"
+import (
+	"github.com/gpontesss/routesim/pkg/gps"
+)
 
-// PosPublisher publishes a GeoJSON position as a Feature (advantage of adding
-// custom properties)
+// PosPublisher publishes a GPS position
 type PosPublisher interface {
-	PublishPos(geojson.Feature) error
+	PublishPos(gps.Position) error
 }

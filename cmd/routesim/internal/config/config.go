@@ -51,8 +51,6 @@ type GPSConfig struct {
 	Frequency Frequency `json:"frequency"`
 	// GPS's distance rate of change (m/s)
 	Velocity float64 `json:"velocity"`
-	// Properties to append to GeoJSON
-	Properties map[string]interface{} `json:"properties"`
 }
 
 // BuildFreqEmitter docs here
@@ -64,7 +62,6 @@ func (cfg GPSConfig) BuildFreqEmitter() (*gps.FreqEmitter, error) {
 	return gps.NewFreqEmitter(
 		sgps,
 		time.Duration(cfg.Frequency),
-		cfg.Properties,
 	), nil
 }
 

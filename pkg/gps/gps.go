@@ -6,13 +6,19 @@ import (
 	"github.com/golang/geo/s2"
 )
 
+// Position docs here
+type Position struct {
+	s2.LatLng
+	GPS GPS
+}
+
 // GPS describes a GPS behavior
 // Nothing should stop you from using a real GPS :D
 type GPS interface {
-	// CurrentPos should return GPS's current position
-	CurrentPos() s2.LatLng
 	// ID should return GPS's unique identifier
 	ID() string
+	// CurrentPos should return GPS's current position
+	CurrentPos() Position
 }
 
 var nowFunc = time.Now
@@ -42,12 +48,12 @@ func (gps *SimGPS) ID() string {
 }
 
 // CurrentPos returns the GPS current position
-func (gps *SimGPS) CurrentPos() s2.LatLng {
+func (gps *SimGPS) CurrentPos() Position {
 	now := nowFunc()
 	dist := now.Sub(gps.lastReport).Seconds() * gps.vel
 
 	gps.lastReport = now
 
 	ll, _ := gps.lw.Walk(DistanceFromMeters(dist))
-	return ll
+	return Position{LatLng: ll, GPS: gps}
 }

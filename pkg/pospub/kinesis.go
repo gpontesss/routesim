@@ -3,7 +3,7 @@ package pospub
 import (
 	"errors"
 
-	geojson "github.com/paulmach/go.geojson"
+	"github.com/gpontesss/routesim/pkg/gps"
 )
 
 type kinesisPosPub struct {
@@ -18,6 +18,6 @@ func KinesisPosPublisher(streamName string) PosPublisher {
 
 // PublishPos docs here
 // TODO: deal with buffering and batch writing
-func (p *kinesisPosPub) PublishPos(pos geojson.Feature) error {
+func (p *kinesisPosPub) PublishPos(pos gps.Position) error {
 	return errors.New("Not implemented")
 }
