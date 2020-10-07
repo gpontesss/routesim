@@ -7,7 +7,6 @@ import (
 // FreqEmitter makes a channel available that receives latlng positions
 type FreqEmitter struct {
 	curPosFunc func() Position
-	freq       time.Duration
 	posChan    chan Position
 }
 
@@ -15,17 +14,19 @@ type FreqEmitter struct {
 func NewFreqEmitter(gps GPS, freq time.Duration) *FreqEmitter {
 	emt := &FreqEmitter{
 		curPosFunc: gps.CurrentPos,
-		freq:       freq,
 		// Should it be buffered?
 		posChan: make(chan Position),
 	}
-	emt.init()
+	emt.init(freq)
 	return emt
 }
 
+// Creates a ticker with a duration
+var tickerFunc func(time.Duration) *time.Ticker
+
 // Initializes a goroutine for querying GPS's position with desired frequency
-func (emt *FreqEmitter) init() {
-	ticker := time.NewTicker(emt.freq)
+func (emt *FreqEmitter) init(freq time.Duration) {
+	ticker := tickerFunc(freq)
 	go func() {
 		for range ticker.C {
 			emt.posChan <- emt.curPosFunc()
