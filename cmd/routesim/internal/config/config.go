@@ -13,7 +13,6 @@ import (
 	"github.com/gpontesss/routesim/pkg/gps"
 	"github.com/gpontesss/routesim/pkg/pospub"
 	"github.com/jonas-p/go-shp"
-	"github.com/sirupsen/logrus"
 )
 
 // Config docs here
@@ -164,12 +163,6 @@ func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 			return nil, err
 		}
 		return pospub.KinesisPosPublisher(kcfg.StreamName), nil
-	case LogPublisher:
-		var lcfg logPubCfg
-		if err := json.Unmarshal(cfg.Options, &lcfg); err != nil {
-			return nil, err
-		}
-		return pospub.LogPosPub(logrus.New(), lcfg.Level), nil
 	case ShpfilePublisher:
 		var shpcfg shpPubCfg
 		if err := json.Unmarshal(cfg.Options, &shpcfg); err != nil {
@@ -188,10 +181,8 @@ func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 }
 
 const (
-	// LogPublisher docs here
-	LogPublisher PublisherType = "Log"
 	// KinesisPublisher docs here
-	KinesisPublisher = "Kinesis"
+	KinesisPublisher PublisherType = "Kinesis"
 	// ShpfilePublisher docs here
 	ShpfilePublisher = "Shpfile"
 	// WebsocketPublisher docs here
@@ -211,8 +202,6 @@ func (t *PublisherType) UnmarshalJSON(v []byte) error {
 	switch strings.ToLower(s) {
 	case "kinesis":
 		*t = KinesisPublisher
-	case "log":
-		*t = LogPublisher
 	case "shpfile":
 		*t = ShpfilePublisher
 	case "websocket":
@@ -225,10 +214,6 @@ func (t *PublisherType) UnmarshalJSON(v []byte) error {
 
 type kinesisPubCfg struct {
 	StreamName string `json:"stream"`
-}
-
-type logPubCfg struct {
-	Level logrus.Level `json:"level"`
 }
 
 type shpPubCfg struct {
