@@ -1,4 +1,4 @@
-package pospub
+package data
 
 import (
 	"errors"
@@ -13,8 +13,8 @@ type shpfilePosPub struct {
 	stopi int32
 }
 
-// ShpfilePosPublisher docs here
-func ShpfilePosPublisher(filePath string, count int32) (PosPublisher, error) {
+// ShpfilePublisher docs here
+func ShpfilePublisher(filePath string, count int32) (PosPublisher, error) {
 	wtr, err := shp.Create(filePath, shp.POINT)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func ShpfilePosPublisher(filePath string, count int32) (PosPublisher, error) {
 	}, nil
 }
 
-// PublishPos docs here
+// Publish docs here
 func (p *shpfilePosPub) PublishPos(pos gps.Position) error {
 	coord := &shp.Point{
 		X: pos.Lat.Degrees(),

@@ -1,4 +1,4 @@
-package pospub
+package data
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gpontesss/routesim/pkg/gps"
-	geojson "github.com/paulmach/go.geojson"
 	"golang.org/x/net/websocket"
 )
 
@@ -15,32 +13,30 @@ type wsPosPub struct {
 	sync.Mutex
 	address, path string
 	errChan       chan error
-	listeners     map[*websocket.Conn]chan<- gps.Position
+	listeners     map[*websocket.Conn]chan<- []byte
 }
 
-// WebsocketPosPublisher creates a new websocket server that publishes GPS
+// WebsocketPublisher creates a new websocket server that publishes GPS
 // positions to connected clients.
-func WebsocketPosPublisher(address, path string) PosPublisher {
+func WebsocketPublisher(address, path string) Publisher {
 	pub := &wsPosPub{
 		address:   address,
 		path:      path,
 		errChan:   make(chan error),
-		listeners: map[*websocket.Conn]chan<- gps.Position{},
+		listeners: map[*websocket.Conn]chan<- []byte{},
 	}
 	pub.init()
 	return pub
 }
 
 // PublishPos broadcasts a GPS position to all connected clients.
-func (pub *wsPosPub) PublishPos(pos gps.Position) error {
-	fmt.Println(pos.GPS.ID(), "Received pos", pos.LatLng, "channels", len(pub.listeners))
-
+func (pub *wsPosPub) Publish(bs []byte) error {
 	select {
 	case err := <-pub.errChan:
 		close(pub.errChan)
 		return err
 	default:
-		pub.broadcast(pos)
+		pub.broadcast(bs)
 	}
 	return nil
 }
@@ -60,11 +56,11 @@ func (pub *wsPosPub) init() {
 }
 
 // Broadcasts a position to all client listeners
-func (pub *wsPosPub) broadcast(pos gps.Position) {
+func (pub *wsPosPub) broadcast(bs []byte) {
 	pub.Lock()
 	defer pub.Unlock()
 	for _, lst := range pub.listeners {
-		lst <- pos
+		lst <- bs
 	}
 }
 
@@ -87,17 +83,17 @@ func (pub *wsPosPub) handleConn(conn *websocket.Conn) {
 
 // Actively listens to broadcast channel and sends the received data to the
 // client every time it receives updates.
-func (pub *wsPosPub) listen(ctx context.Context, conn *websocket.Conn, cancel func(), lstc <-chan gps.Position) {
+func (pub *wsPosPub) listen(ctx context.Context, conn *websocket.Conn, cancel func(), lstc <-chan []byte) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			pos, ok := <-lstc
+			bs, ok := <-lstc
 			if !ok {
 				return
 			}
-			if err := websocket.JSON.Send(conn, formatPos(pos)); err != nil {
+			if err := websocket.JSON.Send(conn, bs); err != nil {
 				fmt.Println("Failed sending data to client:", err)
 				pub.disconnect(conn)
 				return
@@ -140,25 +136,10 @@ func (pub *wsPosPub) disconnect(conn *websocket.Conn) {
 // Handles a new clinet connection. Register its connection and maps it to a
 // channels that listens to position broadcasts. Returns the channel listener
 // channel.
-func (pub *wsPosPub) connect(conn *websocket.Conn) <-chan gps.Position {
-	lst := make(chan gps.Position)
+func (pub *wsPosPub) connect(conn *websocket.Conn) <-chan []byte {
+	lst := make(chan []byte)
 	pub.Lock()
 	defer pub.Unlock()
 	pub.listeners[conn] = lst
 	return lst
-}
-
-// Should be temporary
-func formatPos(pos gps.Position) geojson.Feature {
-	return geojson.Feature{
-		ID:   pos.GPS.ID(),
-		Type: "Feature",
-		Geometry: &geojson.Geometry{
-			Type: geojson.GeometryPoint,
-			Point: []float64{
-				pos.Lat.Degrees(),
-				pos.Lng.Degrees(),
-			},
-		},
-	}
 }

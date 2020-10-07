@@ -9,8 +9,8 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
+	"github.com/gpontesss/routesim/pkg/data"
 	"github.com/gpontesss/routesim/pkg/gps"
-	"github.com/gpontesss/routesim/pkg/pospub"
 	"github.com/jonas-p/go-shp"
 )
 
@@ -155,26 +155,35 @@ type PublisherConfig struct {
 }
 
 // BuildPublisher assembles a PosPublisher
-func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
+func (cfg PublisherConfig) BuildPublisher() (data.PosPublisher, error) {
 	switch cfg.Type {
 	case KinesisPublisher:
 		var kcfg kinesisPubCfg
 		if err := json.Unmarshal(cfg.Options, &kcfg); err != nil {
 			return nil, err
 		}
-		return pospub.KinesisPosPublisher(kcfg.StreamName), nil
+		return data.PosFormatterPublisher(
+			data.KinesisPublisher(kcfg.StreamName),
+			data.GeoJSONFormatter,
+		), nil
+
 	case ShpfilePublisher:
 		var shpcfg shpPubCfg
 		if err := json.Unmarshal(cfg.Options, &shpcfg); err != nil {
 			return nil, err
 		}
-		return pospub.ShpfilePosPublisher(shpcfg.FilePath, shpcfg.Count)
+		return data.ShpfilePublisher(shpcfg.FilePath, shpcfg.Count)
+
 	case WebsocketPublisher:
 		var wscfg wsCfg
 		if err := json.Unmarshal(cfg.Options, &wscfg); err != nil {
 			return nil, err
 		}
-		return pospub.WebsocketPosPublisher(wscfg.Address, wscfg.Path), nil
+		return data.PosFormatterPublisher(
+			data.WebsocketPublisher(wscfg.Address, wscfg.Path),
+			data.GeoJSONFormatter,
+		), nil
+
 	default:
 		return nil, errors.New("Unkonwn publisher type")
 	}

@@ -1,9 +1,7 @@
-package pospub
+package data
 
 import (
 	"errors"
-
-	"github.com/gpontesss/routesim/pkg/gps"
 )
 
 type kinesisPosPub struct {
@@ -11,13 +9,13 @@ type kinesisPosPub struct {
 	// TODO: add AWS credentials as optional
 }
 
-// KinesisPosPublisher docs here
-func KinesisPosPublisher(streamName string) PosPublisher {
+// KinesisPublisher docs here
+func KinesisPublisher(streamName string) Publisher {
 	return &kinesisPosPub{streamName: streamName}
 }
 
 // PublishPos docs here
 // TODO: deal with buffering and batch writing
-func (p *kinesisPosPub) PublishPos(pos gps.Position) error {
+func (p *kinesisPosPub) Publish(bs []byte) error {
 	return errors.New("Not implemented")
 }
