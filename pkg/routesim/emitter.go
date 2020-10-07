@@ -1,23 +1,30 @@
-package gps
+package routesim
 
 import (
 	"time"
+
+	"github.com/gpontesss/routesim/pkg/gps"
 )
 
 // FreqEmitter makes a channel available that receives latlng positions
 type FreqEmitter struct {
-	curPosFunc func() Position
-	posChan    chan Position
+	curPosFunc func() gps.Position
+	posChan    chan gps.Position
 }
 
 // NewFreqEmitter assembles a GPS position emitter
-func NewFreqEmitter(gps GPS, freq time.Duration) *FreqEmitter {
+func NewFreqEmitter(gps gps.GPS, freq time.Duration) *FreqEmitter {
+	return FreqEmitterWithTicker(gps, tickerFunc(freq))
+}
+
+// FreqEmitterWithTicker docs here
+func FreqEmitterWithTicker(gpz gps.GPS, ticker *time.Ticker) *FreqEmitter {
 	emt := &FreqEmitter{
-		curPosFunc: gps.CurrentPos,
+		curPosFunc: gpz.CurrentPos,
 		// Should it be buffered?
-		posChan: make(chan Position),
+		posChan: make(chan gps.Position),
 	}
-	emt.init(freq)
+	emt.init(ticker)
 	return emt
 }
 
@@ -25,8 +32,7 @@ func NewFreqEmitter(gps GPS, freq time.Duration) *FreqEmitter {
 var tickerFunc func(time.Duration) *time.Ticker
 
 // Initializes a goroutine for querying GPS's position with desired frequency
-func (emt *FreqEmitter) init(freq time.Duration) {
-	ticker := tickerFunc(freq)
+func (emt *FreqEmitter) init(ticker *time.Ticker) {
 	go func() {
 		for range ticker.C {
 			emt.posChan <- emt.curPosFunc()
@@ -35,6 +41,6 @@ func (emt *FreqEmitter) init(freq time.Duration) {
 }
 
 // Positions returns a channel that receives positions with desired frequency
-func (emt *FreqEmitter) Positions() <-chan Position {
+func (emt *FreqEmitter) Positions() <-chan gps.Position {
 	return emt.posChan
 }

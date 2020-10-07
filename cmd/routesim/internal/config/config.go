@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
 	"github.com/gpontesss/routesim/pkg/data"
 	"github.com/gpontesss/routesim/pkg/gps"
+	"github.com/gpontesss/routesim/pkg/routesim"
 	"github.com/jonas-p/go-shp"
 )
 
@@ -22,7 +22,7 @@ type Config struct {
 
 // BuildRouteSim assembles a RouteSim
 func (cfg Config) BuildRouteSim() (*routesim.RouteSim, error) {
-	emts := make([]*gps.FreqEmitter, 0, len(cfg.GPSCfgArray))
+	emts := make([]*routesim.FreqEmitter, 0, len(cfg.GPSCfgArray))
 	for _, gpsCfg := range cfg.GPSCfgArray {
 		emt, err := gpsCfg.BuildFreqEmitter()
 		if err != nil {
@@ -54,12 +54,12 @@ type GPSConfig struct {
 }
 
 // BuildFreqEmitter assembles a FreqEmitter
-func (cfg GPSConfig) BuildFreqEmitter() (*gps.FreqEmitter, error) {
+func (cfg GPSConfig) BuildFreqEmitter() (*routesim.FreqEmitter, error) {
 	sgps, err := cfg.BuildGPS()
 	if err != nil {
 		return nil, fmt.Errorf("Error building GPS: %w", err)
 	}
-	return gps.NewFreqEmitter(
+	return routesim.NewFreqEmitter(
 		sgps,
 		time.Duration(cfg.Frequency),
 	), nil

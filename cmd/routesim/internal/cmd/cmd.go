@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gpontesss/routesim/cmd/routesim/internal/config"
-	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
+	"github.com/gpontesss/routesim/pkg/routesim"
 	"github.com/spf13/cobra"
 )
 

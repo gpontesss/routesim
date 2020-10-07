@@ -2,17 +2,16 @@ package routesim
 
 import (
 	"github.com/gpontesss/routesim/pkg/data"
-	"github.com/gpontesss/routesim/pkg/gps"
 )
 
 // RouteSim ingests and publishes simulated GPS position emmitions
 type RouteSim struct {
-	emitters  []*gps.FreqEmitter
+	emitters  []*FreqEmitter
 	publisher data.PosPublisher
 }
 
 // NewRouteSim builds a RouteSim
-func NewRouteSim(ems []*gps.FreqEmitter, pub data.PosPublisher) *RouteSim {
+func NewRouteSim(ems []*FreqEmitter, pub data.PosPublisher) *RouteSim {
 	return &RouteSim{
 		emitters:  ems,
 		publisher: pub,
