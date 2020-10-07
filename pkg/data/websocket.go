@@ -93,7 +93,7 @@ func (pub *wsPosPub) listen(ctx context.Context, conn *websocket.Conn, cancel fu
 			if !ok {
 				return
 			}
-			if err := websocket.JSON.Send(conn, bs); err != nil {
+			if err := websocket.Message.Send(conn, string(bs)); err != nil {
 				fmt.Println("Failed sending data to client:", err)
 				pub.disconnect(conn)
 				return
