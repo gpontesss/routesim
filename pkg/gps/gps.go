@@ -4,15 +4,8 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
+	"github.com/google/uuid"
 )
-
-// Position gathers a lat lng position with its time of occurrence, and a
-// reference to the GPS that generated it.
-type Position struct {
-	s2.LatLng
-	At  time.Time
-	GPS GPS
-}
 
 // GPS describes a GPS behavior
 // Nothing should stop you from using a real GPS :D
@@ -21,6 +14,16 @@ type GPS interface {
 	ID() string
 	// CurrentPos should return GPS's current position
 	CurrentPos() Position
+	// Metadata describes any additional information about the device
+	Metadata() map[string]interface{}
+}
+
+// Position gathers a lat lng position with its time of occurrence, and a
+// reference to the GPS that generated it.
+type Position struct {
+	s2.LatLng
+	At  time.Time
+	GPS GPS
 }
 
 // Gets the current moment of time
@@ -32,22 +35,29 @@ type SimGPS struct {
 	lw         LineWalker
 	vel        float64
 	lastReport time.Time
+	metadata   map[string]interface{}
 }
 
 // NewSimGPS creates a GPS simulator that walks a line with a constant velocity.
 // Velocity is given by m/s.
-func NewSimGPS(id string, vel float64, lw LineWalker) GPS {
+func NewSimGPS(vel float64, lw LineWalker, metadata map[string]interface{}) GPS {
 	return &SimGPS{
-		id:         id,
+		id:         uuid.New().String(),
 		lw:         lw,
 		vel:        vel,
 		lastReport: nowFunc(),
+		metadata:   metadata,
 	}
 }
 
 // ID returns the GPS' ID
 func (gps *SimGPS) ID() string {
 	return gps.id
+}
+
+// Metadata returns simulated device metadata
+func (gps *SimGPS) Metadata() map[string]interface{} {
+	return gps.metadata
 }
 
 // CurrentPos returns the GPS' current position

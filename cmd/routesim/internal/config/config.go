@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"github.com/google/uuid"
 	"github.com/gpontesss/routesim/cmd/routesim/internal/routesim"
 	"github.com/gpontesss/routesim/pkg/gps"
 	"github.com/gpontesss/routesim/pkg/pospub"
@@ -81,7 +80,7 @@ func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 		return nil, fmt.Errorf("Error building line walker: %w", err)
 	}
 
-	return gps.NewSimGPS(uuid.New().String(), cfg.Velocity, lw), nil
+	return gps.NewSimGPS(cfg.Velocity, lw, nil), nil
 }
 
 // Gets a s2.Polyline from a shpfile reader

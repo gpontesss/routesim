@@ -39,11 +39,15 @@ func TestSimGPS(t *testing.T) {
 	flw.On("Walk", DistanceFromMeters(30)).
 		Return(s2.LatLngFromDegrees(90, 0), false)
 
-	gps := NewSimGPS("123", 10, flw)
+	metadata := map[string]interface{}{
+		"vehicle": "car",
+	}
+	gps := NewSimGPS(10, flw, metadata)
 
-	assert.Equal(t, "123", gps.ID())
+	assert.NotEqual(t, gps.ID(), "")
 	assert.Equal(t, s2.LatLngFromDegrees(45, 45), gps.CurrentPos().LatLng)
 	assert.Equal(t, s2.LatLngFromDegrees(90, 0), gps.CurrentPos().LatLng)
+	assert.Equal(t, "car", gps.Metadata()["vehicle"])
 
 	flw.AssertNumberOfCalls(t, "Walk", 2)
 	flw.AssertExpectations(t)
