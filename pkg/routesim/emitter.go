@@ -12,11 +12,6 @@ type FreqEmitter struct {
 	posChan    chan gps.Position
 }
 
-// NewFreqEmitter assembles a GPS position emitter
-func NewFreqEmitter(gps gps.GPS, freq time.Duration) *FreqEmitter {
-	return FreqEmitterWithTicker(gps, tickerFunc(freq))
-}
-
 // FreqEmitterWithTicker docs here
 func FreqEmitterWithTicker(gpz gps.GPS, ticker *time.Ticker) *FreqEmitter {
 	emt := &FreqEmitter{
@@ -28,8 +23,13 @@ func FreqEmitterWithTicker(gpz gps.GPS, ticker *time.Ticker) *FreqEmitter {
 	return emt
 }
 
+// NewFreqEmitter assembles a GPS position emitter
+func NewFreqEmitter(gps gps.GPS, freq time.Duration) *FreqEmitter {
+	return FreqEmitterWithTicker(gps, tickerFunc(freq))
+}
+
 // Creates a ticker with a duration
-var tickerFunc func(time.Duration) *time.Ticker
+var tickerFunc = time.NewTicker
 
 // Initializes a goroutine for querying GPS's position with desired frequency
 func (emt *FreqEmitter) init(ticker *time.Ticker) {
