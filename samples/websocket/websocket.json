@@ -16,6 +16,7 @@
     "publisher": {
         "type": "websocket",
         "options": {
+            "format": "geojson",
             "address": "0.0.0.0:8282",
             "path": "/gps"
         }

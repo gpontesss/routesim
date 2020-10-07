@@ -164,9 +164,13 @@ func (cfg PublisherConfig) BuildPublisher() (data.PosPublisher, error) {
 		if err := json.Unmarshal(cfg.Options, &kcfg); err != nil {
 			return nil, err
 		}
+		fmtr, err := kcfg.Format.GetFormatter()
+		if err != nil {
+			return nil, err
+		}
 		return data.PosFormatterPublisher(
 			data.KinesisPublisher(kcfg.StreamName),
-			data.GeoJSONFormatter,
+			fmtr,
 		), nil
 
 	case ShpfilePublisher:
@@ -181,15 +185,22 @@ func (cfg PublisherConfig) BuildPublisher() (data.PosPublisher, error) {
 		if err := json.Unmarshal(cfg.Options, &wscfg); err != nil {
 			return nil, err
 		}
+		fmtr, err := wscfg.Format.GetFormatter()
+		if err != nil {
+			return nil, err
+		}
 		return data.PosFormatterPublisher(
 			data.WebsocketPublisher(wscfg.Address, wscfg.Path),
-			data.GeoJSONFormatter,
+			fmtr,
 		), nil
 
 	default:
 		return nil, errors.New("Unkonwn publisher type")
 	}
 }
+
+// PublisherType identifies the position publisher type
+type PublisherType string
 
 const (
 	// KinesisPublisher identifies a Kinesis position publisher
@@ -199,9 +210,6 @@ const (
 	// WebsocketPublisher identifies a Websocket position publisher
 	WebsocketPublisher = "Websocket"
 )
-
-// PublisherType identifies the position publisher type
-type PublisherType string
 
 // UnmarshalJSON ummarshals a PublisherType
 func (t *PublisherType) UnmarshalJSON(v []byte) error {
@@ -224,7 +232,8 @@ func (t *PublisherType) UnmarshalJSON(v []byte) error {
 }
 
 type kinesisPubCfg struct {
-	StreamName string `json:"stream"`
+	StreamName string        `json:"stream"`
+	Format     FormatterType `json:"format"`
 }
 
 type shpPubCfg struct {
@@ -233,8 +242,9 @@ type shpPubCfg struct {
 }
 
 type wsCfg struct {
-	Address string `json:"address"`
-	Path    string `json:"path"`
+	Format  FormatterType `json:"format,omitempty"`
+	Address string        `json:"address"`
+	Path    string        `json:"path"`
 }
 
 // Frequency is the frequency that a GPS position should be emitted
@@ -253,5 +263,42 @@ func (f *Frequency) UnmarshalJSON(v []byte) error {
 	}
 
 	*f = Frequency(dur)
+	return nil
+}
+
+// FormatterType identifies a PosFormatter type
+type FormatterType string
+
+const (
+	// NotSpecifiedFormatter indentifies that a formatter wasn't specified
+	NotSpecifiedFormatter FormatterType = ""
+	// GeoJSONFormatter identifies a GeoJSON formatter
+	GeoJSONFormatter = "GeoJSON"
+)
+
+// GetFormatter returns a PosFormatter instance according to its type
+func (t FormatterType) GetFormatter() (data.PosFormatter, error) {
+	switch t {
+	case GeoJSONFormatter:
+		return data.GeoJSONFormatter, nil
+	case NotSpecifiedFormatter:
+		return data.GeoJSONFormatter, nil
+	default:
+		return nil, fmt.Errorf("Unknown formatter '%s'", t)
+	}
+}
+
+// UnmarshalJSON unmarshals a FormatterType
+func (t *FormatterType) UnmarshalJSON(v []byte) error {
+	var s string
+	if err := json.Unmarshal(v, &s); err != nil {
+		return err
+	}
+	switch strings.ToLower(s) {
+	case "geojson":
+		*t = GeoJSONFormatter
+	default:
+		return fmt.Errorf("Unknown formatter type '%s'", s)
+	}
 	return nil
 }
