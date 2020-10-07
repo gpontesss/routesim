@@ -49,6 +49,8 @@ type GPSConfig struct {
 	Frequency Frequency `json:"frequency"`
 	// GPS's distance rate of change (m/s)
 	Velocity float64 `json:"velocity"`
+	// Metadata to attach to the simulated device
+	Metadata map[string]interface{} `json:"metadata"`
 }
 
 // BuildFreqEmitter assembles a FreqEmitter
@@ -80,7 +82,7 @@ func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 		return nil, fmt.Errorf("Error building line walker: %w", err)
 	}
 
-	return gps.NewSimGPS(cfg.Velocity, lw, nil), nil
+	return gps.NewSimGPS(cfg.Velocity, lw, cfg.Metadata), nil
 }
 
 // Gets a s2.Polyline from a shpfile reader
