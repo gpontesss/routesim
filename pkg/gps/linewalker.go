@@ -17,13 +17,16 @@ type LineWalker interface {
 	Walk(dist Distance) (s2.LatLng, bool)
 }
 
-// Distance docs here
+// Distance is the distance that a LineWalker should walk.
+//
+// It is slightly more comprehensive than an angle (even though being one).
 type Distance s1.Angle
 
 // In meters
 const earthRadius = 6_371_000.0
 
-// DistanceFromMeters docs here
+// DistanceFromMeters converts meters to a Distance (essentially, the angle of
+// the earth arc that has length equal to the distance to be converted).
 func DistanceFromMeters(m float64) Distance {
 	return Distance(m / earthRadius)
 }

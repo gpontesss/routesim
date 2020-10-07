@@ -15,13 +15,13 @@ import (
 	"github.com/jonas-p/go-shp"
 )
 
-// Config docs here
+// Config describes a JSON configuration for RouteSim
 type Config struct {
 	GPSCfgArray     []GPSConfig     `json:"gps"`
 	PublisherConfig PublisherConfig `json:"publisher"`
 }
 
-// BuildRouteSim docs here
+// BuildRouteSim assembles a RouteSim
 func (cfg Config) BuildRouteSim() (*routesim.RouteSim, error) {
 	emts := make([]*gps.FreqEmitter, 0, len(cfg.GPSCfgArray))
 	for _, gpsCfg := range cfg.GPSCfgArray {
@@ -39,20 +39,20 @@ func (cfg Config) BuildRouteSim() (*routesim.RouteSim, error) {
 	return routesim.NewRouteSim(emts, pub), nil
 }
 
-// GPSConfig docs here
+// GPSConfig describes a JSON configuration for a GPS and FreqEmitter
 type GPSConfig struct {
 	// Relative path for shapefile describing GPS's route
 	ShapefilePath string `json:"shapefile"`
 	// Route mode that describes the behavior of the route when it reaches the
 	// geometry's end
-	Mode ModeGPS `json:"mode"`
+	Mode WalkingModeGPS `json:"mode"`
 	// Frequency in seconds that new positions should be sent
 	Frequency Frequency `json:"frequency"`
 	// GPS's distance rate of change (m/s)
 	Velocity float64 `json:"velocity"`
 }
 
-// BuildFreqEmitter docs here
+// BuildFreqEmitter assembles a FreqEmitter
 func (cfg GPSConfig) BuildFreqEmitter() (*gps.FreqEmitter, error) {
 	sgps, err := cfg.BuildGPS()
 	if err != nil {
@@ -64,7 +64,7 @@ func (cfg GPSConfig) BuildFreqEmitter() (*gps.FreqEmitter, error) {
 	), nil
 }
 
-// BuildGPS docs here
+// BuildGPS assembles a SimGPS
 func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 	shprdr, err := shp.Open(cfg.ShapefilePath)
 	if err != nil {
@@ -84,6 +84,7 @@ func (cfg GPSConfig) BuildGPS() (gps.GPS, error) {
 	return gps.NewSimGPS(uuid.New().String(), cfg.Velocity, lw), nil
 }
 
+// Gets a s2.Polyline from a shpfile reader
 func s2PolylineFromShpReader(rdr *shp.Reader) (*s2.Polyline, error) {
 	defer rdr.Close()
 
@@ -105,8 +106,8 @@ func s2PolylineFromShpReader(rdr *shp.Reader) (*s2.Polyline, error) {
 	return s2.PolylineFromLatLngs(coords), nil
 }
 
-// BuildLineWalker docs here
-func BuildLineWalker(mode ModeGPS, path *s2.Polyline) (gps.LineWalker, error) {
+// BuildLineWalker assembles a LineWalker
+func BuildLineWalker(mode WalkingModeGPS, path *s2.Polyline) (gps.LineWalker, error) {
 	switch mode {
 	case BackAndForthMode:
 		return gps.BackForthWalker(path), nil
@@ -117,18 +118,18 @@ func BuildLineWalker(mode ModeGPS, path *s2.Polyline) (gps.LineWalker, error) {
 	}
 }
 
-// ModeGPS docs here
-type ModeGPS string
+// WalkingModeGPS identifies a GPS walking mode
+type WalkingModeGPS string
 
 const (
-	// BackAndForthMode  docs here
-	BackAndForthMode ModeGPS = "BackAndForth"
-	// RestartMode docs here
+	// BackAndForthMode identifies a back-and-forth walking mode
+	BackAndForthMode WalkingModeGPS = "BackAndForth"
+	// RestartMode identifies a restart walking mode
 	RestartMode = "Restart"
 )
 
-// UnmarshalJSON docs here
-func (m *ModeGPS) UnmarshalJSON(v []byte) error {
+// UnmarshalJSON unmarshals a WalkingModeGPS
+func (m *WalkingModeGPS) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
 		return err
@@ -146,7 +147,7 @@ func (m *ModeGPS) UnmarshalJSON(v []byte) error {
 	return nil
 }
 
-// PublisherConfig docs here
+// PublisherConfig describes a JSON configuration for a position publisher
 type PublisherConfig struct {
 	// Publisher type name
 	Type PublisherType `json:"type"`
@@ -154,7 +155,7 @@ type PublisherConfig struct {
 	Options json.RawMessage `json:"options"`
 }
 
-// BuildPublisher docs here
+// BuildPublisher assembles a PosPublisher
 func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 	switch cfg.Type {
 	case KinesisPublisher:
@@ -181,18 +182,18 @@ func (cfg PublisherConfig) BuildPublisher() (pospub.PosPublisher, error) {
 }
 
 const (
-	// KinesisPublisher docs here
+	// KinesisPublisher identifies a Kinesis position publisher
 	KinesisPublisher PublisherType = "Kinesis"
-	// ShpfilePublisher docs here
+	// ShpfilePublisher identifies a Shpfile position publisher
 	ShpfilePublisher = "Shpfile"
-	// WebsocketPublisher docs here
+	// WebsocketPublisher identifies a Websocket position publisher
 	WebsocketPublisher = "Websocket"
 )
 
-// PublisherType docs here
+// PublisherType identifies the position publisher type
 type PublisherType string
 
-// UnmarshalJSON docs here
+// UnmarshalJSON ummarshals a PublisherType
 func (t *PublisherType) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {
@@ -226,10 +227,10 @@ type wsCfg struct {
 	Path    string `json:"path"`
 }
 
-// Frequency docs here
+// Frequency is the frequency that a GPS position should be emitted
 type Frequency time.Duration
 
-// UnmarshalJSON docs here
+// UnmarshalJSON unmarshals a Frequency
 func (f *Frequency) UnmarshalJSON(v []byte) error {
 	var s string
 	if err := json.Unmarshal(v, &s); err != nil {

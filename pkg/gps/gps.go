@@ -6,9 +6,11 @@ import (
 	"github.com/golang/geo/s2"
 )
 
-// Position docs here
+// Position gathers a lat lng position with its time of occurrence, and a
+// reference to the GPS that generated it.
 type Position struct {
 	s2.LatLng
+	At  time.Time
 	GPS GPS
 }
 
@@ -21,6 +23,7 @@ type GPS interface {
 	CurrentPos() Position
 }
 
+// Gets the current moment of time
 var nowFunc = time.Now
 
 // SimGPS simulates a real GPS that walks a line
@@ -42,12 +45,12 @@ func NewSimGPS(id string, vel float64, lw LineWalker) GPS {
 	}
 }
 
-// ID returns the GPS ID
+// ID returns the GPS' ID
 func (gps *SimGPS) ID() string {
 	return gps.id
 }
 
-// CurrentPos returns the GPS current position
+// CurrentPos returns the GPS' current position
 func (gps *SimGPS) CurrentPos() Position {
 	now := nowFunc()
 	dist := now.Sub(gps.lastReport).Seconds() * gps.vel
@@ -55,5 +58,5 @@ func (gps *SimGPS) CurrentPos() Position {
 	gps.lastReport = now
 
 	ll, _ := gps.lw.Walk(DistanceFromMeters(dist))
-	return Position{LatLng: ll, GPS: gps}
+	return Position{LatLng: ll, GPS: gps, At: now}
 }
