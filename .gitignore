@@ -1,4 +1,4 @@
 .vscode/
 
-samples/out/*
-!samples/out/.gitkeep
+samples/shpfile/out/*
+!samples/shpfile/out/.gitkeep

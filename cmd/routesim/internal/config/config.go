@@ -279,9 +279,7 @@ const (
 // GetFormatter returns a PosFormatter instance according to its type
 func (t FormatterType) GetFormatter() (data.PosFormatter, error) {
 	switch t {
-	case GeoJSONFormatter:
-		return data.GeoJSONFormatter, nil
-	case NotSpecifiedFormatter:
+	case NotSpecifiedFormatter, GeoJSONFormatter:
 		return data.GeoJSONFormatter, nil
 	default:
 		return nil, fmt.Errorf("Unknown formatter '%s'", t)
