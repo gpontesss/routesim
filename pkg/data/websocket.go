@@ -71,6 +71,8 @@ func (pub *wsPosPub) handleConn(conn *websocket.Conn) {
 	fmt.Println("Received conn")
 
 	lstc := pub.connect(conn)
+	defer pub.disconnect(conn)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -78,24 +80,23 @@ func (pub *wsPosPub) handleConn(conn *websocket.Conn) {
 
 	// It has to block. Returning from the function terminates all communication
 	// with the client.
-	pub.listen(ctx, conn, cancel, lstc)
+	pub.listen(ctx, cancel, conn, lstc)
 }
 
 // Actively listens to broadcast channel and sends the received data to the
 // client every time it receives updates.
-func (pub *wsPosPub) listen(ctx context.Context, conn *websocket.Conn, cancel func(), lstc <-chan []byte) {
+func (pub *wsPosPub) listen(ctx context.Context, cancel func(), conn *websocket.Conn, lstc <-chan []byte) {
+	defer cancel()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			bs, ok := <-lstc
+		case bs, ok := <-lstc:
 			if !ok {
 				return
 			}
 			if err := websocket.Message.Send(conn, string(bs)); err != nil {
 				fmt.Println("Failed sending data to client:", err)
-				pub.disconnect(conn)
 				return
 			}
 		}
@@ -114,7 +115,6 @@ func (pub *wsPosPub) handleRcvs(ctx context.Context, cancel func(), conn *websoc
 		default:
 			if err := websocket.Message.Receive(conn, nil); err != nil {
 				fmt.Println("Error reading clients message:", err)
-				pub.disconnect(conn)
 				return
 			}
 		}
